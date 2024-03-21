@@ -1,7 +1,7 @@
 import urllib3
 from bs4 import BeautifulSoup
+import uvicorn
 from fastapi import FastAPI
-from datetime import datetime
 from sqlhelper import setup_database, insert_garage_data, delete_garage_data
 
 
@@ -34,7 +34,6 @@ async def get_garage_data():
         garage_data[name.text.strip()] = [fullness.text.strip(), address]
 
     
-    print(garage_data)
     conn = setup_database(dbfile)
     insert_garage_data(conn, garage_data)
     delete_garage_data(conn)
