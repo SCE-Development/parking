@@ -1,8 +1,9 @@
 import urllib3
 from bs4 import BeautifulSoup
+from datetime import datetime
 import uvicorn
 from fastapi import FastAPI
-from sqlhelper import setup_database, insert_garage_data, delete_garage_data
+from sqlhelper import create_table, insert_garage_data, delete_garage_data
 
 
 app = FastAPI()
@@ -14,6 +15,8 @@ http = urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
 dbfile = 'parking.db'
 garage_data = {}
 
+def get_time():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 
@@ -33,10 +36,10 @@ async def get_garage_data():
     for name, fullness, address in zip(garage_names, garage_fullness, href_links):
         garage_data[name.text.strip()] = [fullness.text.strip(), address]
 
-    
-    conn = setup_database(dbfile)
-    insert_garage_data(conn, garage_data)
-    delete_garage_data(conn)
+    time = get_time()
+    conn = create_table(dbfile, garage_data)
+    insert_garage_data(conn, garage_data, time)
+    delete_garage_data(conn,garage_data)
 
     return garage_data
 

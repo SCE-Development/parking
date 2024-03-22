@@ -1,37 +1,46 @@
 import sqlite3
+from datetime import datetime, timedelta    
 
 #database setup function
-def setup_database(dbfile):
+def create_table(dbfile: str, garage_data):
     conn = sqlite3.connect(dbfile)
     c = conn.cursor()
-
-    c.execute('''CREATE TABLE IF NOT EXISTS garage_status
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  garage_names TEXT, 
-                  garage_fullness TEXT, 
-                  garage_addresses TEXT,
-                  timestamp TEXT DEFAULT CURRENT_TIMESTAMP)''')
+    
+    for garage_name in garage_data.keys():
+        table_name = garage_name.replace(" ", "_")
+        c.execute(f'''CREATE TABLE IF NOT EXISTS {table_name} (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      garage_fullness TEXT,
+                      time TEXT
+                      )''')
     conn.commit()
     print("Database setup complete")
     return conn
 
-#insert data function
-def insert_garage_data(conn,garage_data):
-    c = conn.cursor()
-    sql = "INSERT INTO garage_status (garage_names, garage_fullness, garage_addresses) VALUES (?, ?, ?)"
 
+#insert data function
+def insert_garage_data(conn, garage_data, time):
+    c = conn.cursor()
 
     for garage_names, details in garage_data.items():
-         c.execute(sql, (garage_names, details[0], details[1]))
+        table_name = garage_names.replace(" ", "_")
+        c.execute(f"INSERT INTO {table_name} (garage_fullness, time) VALUES (?, ?)", (details[0], time))
+
     conn.commit()
     print("Data inserted")
-
     
 
 #delete data after two minutes for now function
-def delete_garage_data(conn):
+def delete_garage_data(conn, garage_data):
     c = conn.cursor()
-    c.execute("DELETE FROM garage_status WHERE timestamp < datetime('now', '-2 minutes')")
+    time_threshold = (datetime.now() - timedelta(minutes=1)).strftime('%Y-%m-%d %H:%M:%S')
+
+    for garage_names in garage_data.keys():
+        table_name = garage_names.replace(" ", "_")
+        c.execute(f"DELETE FROM {table_name} WHERE time < ?", (time_threshold))
+
     conn.commit()
-    
     print("Old data deleted")
+
+
+
