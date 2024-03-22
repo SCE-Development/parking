@@ -17,7 +17,6 @@ def create_table(dbfile: str, garage_data):
     print("Database setup complete")
     return conn
 
-
 #insert data function
 def insert_garage_data(conn, garage_data, time):
     c = conn.cursor()
@@ -37,9 +36,10 @@ def delete_garage_data(conn, garage_data):
 
     for garage_names in garage_data.keys():
         table_name = garage_names.replace(" ", "_")
-        c.execute(f"DELETE FROM {table_name} WHERE time < ?", (time_threshold))
+        c.execute(f"DELETE FROM {table_name} WHERE time < ?", (time_threshold,))
 
     conn.commit()
+    
     print("Old data deleted")
 
 
