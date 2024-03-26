@@ -58,8 +58,3 @@ def delete_garage_data(dbfile: str, garage):
         print("Old data deleted")
     except Exception as e:
         print(e)
-    
-
-print(get_garage_data("parking.db", "North_Garage"))
-delete_garage_data("parking.db", "North_Garage")
-print(get_garage_data("parking.db", "North_Garage"))
