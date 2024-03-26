@@ -25,6 +25,7 @@ def insert_garage_data(dbfile: str, garage, fullness, timestamp):
     try:
         query = f"INSERT INTO {garage} (garage_fullness, time) VALUES (?, ?)"
         c.execute(query, [fullness, timestamp])
+        conn.commit()
     except Exception as e:
         print(e)
         return False
@@ -45,17 +46,20 @@ def get_garage_data(dbfile: str, garage, time=None):
         print(e)
 
 #delete data after two minutes for now function
-def delete_garage_data(dbfile: str, garage_names):
+def delete_garage_data(dbfile: str, garage):
     conn = sqlite3.connect(dbfile)
     c = conn.cursor()
     time_threshold = (datetime.now() - timedelta(minutes=1)).strftime('%Y-%m-%d %H:%M:%S')
-
-    for garage_name in garage_names:
-        c.execute(f"DELETE FROM {garage_name} WHERE time < ?", (time_threshold,))
-
-    conn.commit()
+    print(time_threshold)
+    try:
+        query = f"DELETE FROM {garage} WHERE time < ?"
+        c.execute(query, (time_threshold,))
+        conn.commit()
+        print("Old data deleted")
+    except Exception as e:
+        print(e)
     
-    print("Old data deleted")
 
-
-
+print(get_garage_data("parking.db", "North_Garage"))
+delete_garage_data("parking.db", "North_Garage")
+print(get_garage_data("parking.db", "North_Garage"))
