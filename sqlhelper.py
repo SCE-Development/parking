@@ -45,12 +45,12 @@ def get_garage_data(dbfile: str, garage, time=None):
     except Exception as e:
         print(e)
 
-#delete data after two minutes for now function
+#delete data after two weeks
 def delete_garage_data(dbfile: str, garage):
     conn = sqlite3.connect(dbfile)
     c = conn.cursor()
-    time_threshold = (datetime.now() - timedelta(minutes=1)).strftime('%Y-%m-%d %H:%M:%S')
-    print(time_threshold)
+    time_threshold = (datetime.now() - timedelta(weeks=2)).strftime('%Y-%m-%d %H:%M:%S')
+    print("TIME:",time_threshold)
     try:
         query = f"DELETE FROM {garage} WHERE time < ?"
         c.execute(query, (time_threshold,))
@@ -58,3 +58,6 @@ def delete_garage_data(dbfile: str, garage):
         print("Old data deleted")
     except Exception as e:
         print(e)
+
+
+
