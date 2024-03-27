@@ -39,6 +39,7 @@ async def get_garage_data():
     timestamp = get_time()
     for garage in GARAGE_NAMES:
         sqlhelper.insert_garage_data(DB_FILE, garage, garage_data[garage][0], timestamp)
+        sqlhelper.delete_garage_data(DB_FILE, garage)
 
     return garage_data
 
