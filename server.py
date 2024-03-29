@@ -1,16 +1,24 @@
 import urllib3
 from bs4 import BeautifulSoup
-from fastapi import FastAPI
+from datetime import datetime
 import uvicorn
+from fastapi import FastAPI
+import sqlhelper
 
 app = FastAPI()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
 
+DB_FILE = 'parking.db'
+garage_addresses = []
+GARAGE_NAMES = ["North_Garage", "South_Garage", "West_Garage", "South_Campus_Garage"]
+sqlhelper.maybe_create_table(DB_FILE, GARAGE_NAMES)
 
-garage_data = {}
+def get_time():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+#fastapi endpoint
 @app.get("/parking")
 async def get_garage_data():
     response = http.request('GET', 'https://sjsuparkingstatus.sjsu.edu')
@@ -24,12 +32,16 @@ async def get_garage_data():
 
     garage_data = {}  # Reset garage data for each request
     for name, fullness, address in zip(garage_names, garage_fullness, href_links):
-        garage_data[name.text.strip()] = [fullness.text.strip(), address]
+        garage_data[name.text.strip().replace(" ", "_")] = [fullness.text.strip(), address]
+        garage_addresses = [info[1] for info in garage_data.values()]    
 
-    print(garage_data)
+    
+    timestamp = get_time()
+    for garage in GARAGE_NAMES:
+        sqlhelper.insert_garage_data(DB_FILE, garage, garage_data[garage][0], timestamp)
+        sqlhelper.delete_garage_data(DB_FILE, garage)
+
     return garage_data
-
-get_garage_data()
 
 
 if __name__ == "__main__":
