@@ -4,21 +4,26 @@ from datetime import datetime
 import uvicorn
 from fastapi import FastAPI
 import sqlhelper
+import random
+import logging
+import time
+from args import get_args
 
 app = FastAPI()
+args = get_args()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
 
-DB_FILE = 'parking.db'
+DB_FILE = None
 garage_addresses = []
 GARAGE_NAMES = ["North_Garage", "South_Garage", "West_Garage", "South_Campus_Garage"]
-sqlhelper.maybe_create_table(DB_FILE, GARAGE_NAMES)
+sqlhelper.maybe_create_table(args.dbfile, GARAGE_NAMES)
 
 def get_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-#fastapi endpoint
+#fastapi endpoints
 @app.get("/parking")
 async def get_garage_data():
     response = http.request('GET', 'https://sjsuparkingstatus.sjsu.edu')
@@ -38,11 +43,28 @@ async def get_garage_data():
     
     timestamp = get_time()
     for garage in GARAGE_NAMES:
-        sqlhelper.insert_garage_data(DB_FILE, garage, garage_data[garage][0], timestamp)
-        sqlhelper.delete_garage_data(DB_FILE, garage)
+        sqlhelper.insert_garage_data(args.dbfile, garage, garage_data[garage][0], timestamp)
+        sqlhelper.delete_garage_data(args.dbfile, garage)
 
     return garage_data
 
 
+@app.get("/logging-levels")
+def logging_levels():
+    logging.error("error message")
+    logging.warning("warning message")
+    logging.info("info message")
+    logging.debug("debug message")
+
+
+logging.Formatter.converter = time.gmtime
+logging.basicConfig(
+    format="%(asctime)s.%(msecs)03dZ %(levelname)s:%(name)s:%(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+    level= logging.ERROR - (args.verbose*10),
+)
+
 if __name__ == "__main__":
-    uvicorn.run("server:app", port=8000, reload=True)
+    args = get_args()
+    DB_FILE = args.dbfile
+    uvicorn.run("server:app", host=args.host, port=args.port, reload=args.reload, )
