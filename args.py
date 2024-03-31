@@ -15,13 +15,6 @@ def get_args():
     )
 
     parser.add_argument(
-        "--reload",
-        type=bool,
-        required=False,
-        help="boolean for the uvicorn run command's 'reload' parameter"
-    )
-
-    parser.add_argument(
             "--verbose",
             "-v",
             action="count",

@@ -48,15 +48,6 @@ async def get_garage_data():
 
     return garage_data
 
-
-@app.get("/logging-levels")
-def logging_levels():
-    logging.error("error message")
-    logging.warning("warning message")
-    logging.info("info message")
-    logging.debug("debug message")
-
-
 logging.Formatter.converter = time.gmtime
 logging.basicConfig(
     format="%(asctime)s.%(msecs)03dZ %(levelname)s:%(name)s:%(message)s",
