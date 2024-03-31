@@ -15,10 +15,10 @@ args = get_args()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
 
-DB_FILE = None
+DB_FILE = args.dbfile
 garage_addresses = []
 GARAGE_NAMES = ["North_Garage", "South_Garage", "West_Garage", "South_Campus_Garage"]
-sqlhelper.maybe_create_table(args.dbfile, GARAGE_NAMES)
+sqlhelper.maybe_create_table(DB_FILE, GARAGE_NAMES)
 
 def get_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -43,8 +43,8 @@ async def get_garage_data():
     
     timestamp = get_time()
     for garage in GARAGE_NAMES:
-        sqlhelper.insert_garage_data(args.dbfile, garage, garage_data[garage][0], timestamp)
-        sqlhelper.delete_garage_data(args.dbfile, garage)
+        sqlhelper.insert_garage_data(DB_FILE, garage, garage_data[garage][0], timestamp)
+        sqlhelper.delete_garage_data(DB_FILE, garage)
 
     return garage_data
 
@@ -66,5 +66,4 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     args = get_args()
-    DB_FILE = args.dbfile
     uvicorn.run("server:app", host=args.host, port=args.port, reload=args.reload, )
