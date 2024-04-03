@@ -8,6 +8,8 @@ import random
 import logging
 import time
 from args import get_args
+import pytz
+import threading
 
 app = FastAPI()
 args = get_args()
@@ -55,6 +57,25 @@ logging.basicConfig(
     level= logging.ERROR - (args.verbose*10),
 )
 
+def helper_thread():
+    while True:
+        current_time = datetime.now(pytz.timezone('US/Pacific'))
+        if current_time.hour >= 8 and current_time.hour < 14:
+            try:
+                # Between 8am-2pm, call endpoint
+                get_garage_data()
+            except Exception as e:
+                print(f"An error occurred: {e}")
+        else:
+            break
+
+        # Calling endpoint every minute
+        time.sleep(60)  
+
 if __name__ == "__main__":
     args = get_args()
     uvicorn.run("server:app", host=args.host, port=args.port, reload=True, )
+
+if __name__ == 'app':
+    helper = threading.Thread(target=helper_thread, daemon=True)
+    helper.start()
