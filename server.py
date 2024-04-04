@@ -1,3 +1,4 @@
+import asyncio
 import urllib3
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -8,6 +9,8 @@ import random
 import logging
 import time
 from args import get_args
+import pytz
+import threading
 
 app = FastAPI()
 args = get_args()
@@ -54,6 +57,32 @@ logging.basicConfig(
     datefmt="%Y-%m-%dT%H:%M:%S",
     level= logging.ERROR - (args.verbose*10),
 )
+
+@app.get("/")
+async def root():
+    return "Welcome to SJSU Parking!"
+
+def helper_thread():
+    print("Helper thread started.")  
+    while True:
+        current_time = datetime.now(pytz.timezone('US/Pacific'))
+        print(f"Current time: {current_time}")
+        if current_time.hour >= 8 and current_time.hour < 14:
+            try:
+                # Between 8am-2pm, call endpoint
+                asyncio.run(get_garage_data())  
+            except Exception as e:
+                print(f"An error occurred: {e}")
+        else:
+            print("Stopping data retrieval as it's past 2:00 PM PST.")
+            break
+
+        # Calling endpoint every minute
+        time.sleep(60) 
+
+if __name__ == 'server':
+    helper = threading.Thread(target=helper_thread, daemon=True)
+    helper.start()
 
 if __name__ == "__main__":
     args = get_args()

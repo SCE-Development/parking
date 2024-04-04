@@ -31,7 +31,7 @@ def insert_garage_data(dbfile: str, garage, fullness, timestamp):
         return False
 
     conn.commit()
-    print("Data inserted")
+    print(f"Data inserted into {garage} at {timestamp}")
     c.execute(f"SELECT * FROM {garage}")
     print(c.fetchall())
 
