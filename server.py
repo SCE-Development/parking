@@ -78,12 +78,12 @@ def helper_thread():
             break
 
         # Calling endpoint every minute
-        time.sleep(10) 
+        time.sleep(20) 
 
-helper = threading.Thread(target=helper_thread, daemon=True)
-helper.start()
+if __name__ == 'server':
+    helper = threading.Thread(target=helper_thread, daemon=True)
+    helper.start()
 
 if __name__ == "__main__":
     args = get_args()
     uvicorn.run("server:app", host=args.host, port=args.port, reload=True, )
-    
