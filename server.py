@@ -67,18 +67,18 @@ def helper_thread():
     while True:
         current_time = datetime.now(pytz.timezone('US/Pacific'))
         print(f"Current time: {current_time}")
-        if current_time.hour >= 8 and current_time.hour < 18:
+        if current_time.hour >= 8 and current_time.hour < 14:
             try:
-                # Between 8am-6pm, call endpoint
-                asyncio.run(get_garage_data())  # Run the coroutine in the event loop
+                # Between 8am-2pm, call endpoint
+                asyncio.run(get_garage_data())  
             except Exception as e:
                 print(f"An error occurred: {e}")
         else:
-            print("Stopping data retrieval as it's past 6:00 PM PST.")
+            print("Stopping data retrieval as it's past 2:00 PM PST.")
             break
 
         # Calling endpoint every minute
-        time.sleep(20) 
+        time.sleep(60) 
 
 if __name__ == 'server':
     helper = threading.Thread(target=helper_thread, daemon=True)
