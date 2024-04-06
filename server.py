@@ -15,6 +15,14 @@ import threading
 app = FastAPI()
 args = get_args()
 
+logging.Formatter.converter = time.gmtime
+logging.basicConfig(
+    format="%(asctime)s.%(msecs)03dZ %(levelname)s:%(name)s:%(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+    level= logging.ERROR - (args.verbose*10),
+)
+logger = logging.getLogger(__name__)
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
 
@@ -29,6 +37,7 @@ def get_time():
 #fastapi endpoints
 @app.get("/parking")
 async def get_garage_data():
+    logger.debug("Retrieving/updating garage data...")
     response = http.request('GET', 'https://sjsuparkingstatus.sjsu.edu')
     data = response.data.decode('utf-8')
     soup = BeautifulSoup(data, 'html.parser')
@@ -49,15 +58,8 @@ async def get_garage_data():
         sqlhelper.insert_garage_data(DB_FILE, garage, garage_data[garage][0], timestamp)
         sqlhelper.delete_garage_data(DB_FILE, garage)
 
+    logger.debug("Garage data updated successfully")
     return garage_data
-
-logging.Formatter.converter = time.gmtime
-logging.basicConfig(
-    format="%(asctime)s.%(msecs)03dZ %(levelname)s:%(name)s:%(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%S",
-    level= logging.ERROR - (args.verbose*10),
-)
-logger = logging.getLogger(__name__)
 
 @app.get("/")
 async def root():
@@ -67,7 +69,7 @@ def helper_thread():
     logger.debug("Helper thread started.")  
     while True:
         current_time = datetime.now(pytz.timezone('US/Pacific'))
-        logger.debug(f"Current time: {current_time}")
+        logger.info(f"Current time: {current_time}")
         if current_time.hour >= 8 and current_time.hour < 18:
             try:
                 # Between 8am-2pm, call endpoint
