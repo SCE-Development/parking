@@ -1,5 +1,8 @@
 import sqlite3
+import logging
 from datetime import datetime, timedelta    
+
+logger = logging.getLogger(__name__)
 
 #database setup function
 def maybe_create_table(dbfile: str, garage_names):
@@ -13,7 +16,7 @@ def maybe_create_table(dbfile: str, garage_names):
                       time TEXT
                       )''')
     conn.commit()
-    print("Database setup complete")
+    logger.debug("Database setup complete")
     return conn
 
 #insert data function
@@ -21,19 +24,19 @@ def insert_garage_data(dbfile: str, garage, fullness, timestamp):
     conn = sqlite3.connect(dbfile)
     c = conn.cursor()
     # delete_garage_data()
-    print(f"{garage}")
+    logger.info(f"{garage}")
     try:
         query = f"INSERT INTO {garage} (garage_fullness, time) VALUES (?, ?)"
         c.execute(query, [fullness, timestamp])
         conn.commit()
-    except Exception as e:
-        print(e)
+    except Exception:
+        logger.exception("unable to insert garage data")
         return False
 
     conn.commit()
-    print(f"Data inserted into {garage} at {timestamp}")
+    logger.info(f"Data inserted into {garage} at {timestamp}")
     c.execute(f"SELECT * FROM {garage}")
-    print(c.fetchall())
+    logger.info(c.fetchall())
 
 def get_garage_data(dbfile: str, garage, time=None):
     conn = sqlite3.connect(dbfile)
@@ -43,21 +46,21 @@ def get_garage_data(dbfile: str, garage, time=None):
         c.execute(query)
         return c.fetchall()
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 #delete data after two weeks
 def delete_garage_data(dbfile: str, garage):
     conn = sqlite3.connect(dbfile)
     c = conn.cursor()
     time_threshold = (datetime.now() - timedelta(weeks=2)).strftime('%Y-%m-%d %H:%M:%S')
-    print("TIME:",time_threshold)
+    logger.debug(f"TIME: {time_threshold}")
     try:
         query = f"DELETE FROM {garage} WHERE time < ?"
         c.execute(query, (time_threshold,))
         conn.commit()
-        print("Old data deleted")
+        logger.debug("Old data deleted")
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 

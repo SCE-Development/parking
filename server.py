@@ -15,6 +15,14 @@ import threading
 app = FastAPI()
 args = get_args()
 
+logging.Formatter.converter = time.gmtime
+logging.basicConfig(
+    format="%(asctime)s.%(msecs)03dZ %(levelname)s:%(name)s:%(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+    level= logging.ERROR - (args.verbose*10),
+)
+logger = logging.getLogger(__name__)
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
 
@@ -29,6 +37,7 @@ def get_time():
 #fastapi endpoints
 @app.get("/parking")
 async def get_garage_data():
+    logger.debug("Retrieving/updating garage data...")
     response = http.request('GET', 'https://sjsuparkingstatus.sjsu.edu')
     data = response.data.decode('utf-8')
     soup = BeautifulSoup(data, 'html.parser')
@@ -49,32 +58,36 @@ async def get_garage_data():
         sqlhelper.insert_garage_data(DB_FILE, garage, garage_data[garage][0], timestamp)
         sqlhelper.delete_garage_data(DB_FILE, garage)
 
+    logger.debug("Garage data updated successfully")
     return garage_data
-
-logging.Formatter.converter = time.gmtime
-logging.basicConfig(
-    format="%(asctime)s.%(msecs)03dZ %(levelname)s:%(name)s:%(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%S",
-    level= logging.ERROR - (args.verbose*10),
-)
 
 @app.get("/")
 async def root():
     return "Welcome to SJSU Parking!"
 
+@app.get("/get_data/{garage}")
+async def get_data(garage: str):
+    logger.debug(f"Getting {garage} data")
+    data = sqlhelper.get_garage_data(DB_FILE, garage)
+
+    if data:
+        return {"Garage": garage, "data": data}
+    else:
+        return {"No data found for": garage}
+
 def helper_thread():
-    print("Helper thread started.")  
+    logger.debug("Helper thread started.")  
     while True:
         current_time = datetime.now(pytz.timezone('US/Pacific'))
-        print(f"Current time: {current_time}")
-        if current_time.hour >= 8 and current_time.hour < 14:
+        logger.info(f"Current time: {current_time}")
+        if current_time.hour >= 8 and current_time.hour < 18:
             try:
                 # Between 8am-2pm, call endpoint
                 asyncio.run(get_garage_data())  
-            except Exception as e:
-                print(f"An error occurred: {e}")
+            except Exception:
+                logger.exception("unable to get garage data")
         else:
-            print("Stopping data retrieval as it's past 2:00 PM PST.")
+            logger.info("Stopping data retrieval as it's past 2:00 PM PST.")
             break
 
         # Calling endpoint every minute
