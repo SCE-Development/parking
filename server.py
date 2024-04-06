@@ -87,7 +87,7 @@ def helper_thread():
             except Exception as e:
                 logger.error(f"An error occurred: {e}")
         else:
-            logger.debug("Stopping data retrieval as it's past 2:00 PM PST.")
+            logger.info("Stopping data retrieval as it's past 2:00 PM PST.")
             break
 
         # Calling endpoint every minute
