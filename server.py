@@ -57,24 +57,25 @@ logging.basicConfig(
     datefmt="%Y-%m-%dT%H:%M:%S",
     level= logging.ERROR - (args.verbose*10),
 )
+logger = logging.getLogger(__name__)
 
 @app.get("/")
 async def root():
     return "Welcome to SJSU Parking!"
 
 def helper_thread():
-    print("Helper thread started.")  
+    logger.debug("Helper thread started.")  
     while True:
         current_time = datetime.now(pytz.timezone('US/Pacific'))
-        print(f"Current time: {current_time}")
-        if current_time.hour >= 8 and current_time.hour < 14:
+        logger.debug(f"Current time: {current_time}")
+        if current_time.hour >= 8 and current_time.hour < 18:
             try:
                 # Between 8am-2pm, call endpoint
                 asyncio.run(get_garage_data())  
             except Exception as e:
-                print(f"An error occurred: {e}")
+                logger.error(f"An error occurred: {e}")
         else:
-            print("Stopping data retrieval as it's past 2:00 PM PST.")
+            logger.debug("Stopping data retrieval as it's past 2:00 PM PST.")
             break
 
         # Calling endpoint every minute
