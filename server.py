@@ -65,6 +65,16 @@ async def get_garage_data():
 async def root():
     return "Welcome to SJSU Parking!"
 
+@app.get("/get_data/{garage}")
+async def get_data(garage: str):
+    logger.debug(f"Getting {garage} data")
+    data = sqlhelper.get_garage_data(DB_FILE, garage)
+
+    if data:
+        return {"Garage": garage, "data": data}
+    else:
+        return {"No data found for": garage}
+
 def helper_thread():
     logger.debug("Helper thread started.")  
     while True:
