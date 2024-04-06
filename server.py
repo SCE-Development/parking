@@ -84,8 +84,8 @@ def helper_thread():
             try:
                 # Between 8am-2pm, call endpoint
                 asyncio.run(get_garage_data())  
-            except Exception as e:
-                logger.error(f"An error occurred: {e}")
+            except Exception:
+                logger.exception("unable to get garage data")
         else:
             logger.info("Stopping data retrieval as it's past 2:00 PM PST.")
             break

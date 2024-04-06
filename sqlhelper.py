@@ -29,8 +29,8 @@ def insert_garage_data(dbfile: str, garage, fullness, timestamp):
         query = f"INSERT INTO {garage} (garage_fullness, time) VALUES (?, ?)"
         c.execute(query, [fullness, timestamp])
         conn.commit()
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception("unable to insert garage data")
         return False
 
     conn.commit()
