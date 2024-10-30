@@ -12,16 +12,42 @@ services:
       - "5432:5432"
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - postgres_data:/var/lib/postgresql/data
-  pgadmin:
-    container_name: pgadmin4_container
-    image: dpage/pgadmin4
+      - sce_parking_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d test_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    container_name: parking_server
     restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: root
     ports:
-      - "5050:80"
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - VERBOSE=2
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      db:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+#pgadmin:
+#  container_name: pgadmin4_container
+#  image: dpage/pgadmin4
+#  restart: always
+#  environment:
+#    PGADMIN_DEFAULT_EMAIL: admin@admin.com
+#    PGADMIN_DEFAULT_PASSWORD: root
+#  ports:
+#    - "5050:80"
 
 volumes:
-  postgres_data:
+  sce_parking_data:

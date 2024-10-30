@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+beautifulsoup4
+urllib3
+pytz
+psycopg2-binary
