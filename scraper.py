@@ -4,9 +4,23 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import psycopg2
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
+
+TIMESTAMP_FILE = 'last_timestamp.txt'
+
+def get_last_stored_timestamp():
+    try:
+        with open(TIMESTAMP_FILE, 'r') as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return None
+
+def update_stored_timestamp(new_timestamp):
+    with open(TIMESTAMP_FILE, 'w') as file:
+        file.write(new_timestamp)
 
 def scrape_parking_data_and_insert_into_db():
     # Suppress the warning
@@ -24,8 +38,20 @@ def scrape_parking_data_and_insert_into_db():
         data = response.content.decode('utf-8')
         soup = BeautifulSoup(data, 'html.parser')
 
-        # Example of scraping logic
-        garage_div = soup.find('div', class_='garage')  # Adjust this based on actual HTML structure
+        timestamp_tag = soup.find('p', class_='timestamp')
+        if not timestamp_tag:
+            print("Timestamp not found on the page.")
+            return
+        
+        current_timestamp = timestamp_tag.text.strip().split("Last updated ")[-1].split(" Refresh")[0]
+        last_timestamp = get_last_stored_timestamp()
+        if last_timestamp == current_timestamp:
+            print("Timestamp has not changed; skipping database insert.")
+            return
+        
+        update_stored_timestamp(current_timestamp)
+
+        garage_div = soup.find('div', class_='garage')  
         garage_names = garage_div.find_all('h2', class_='garage__name')
         garage_fullness = garage_div.find_all('span', class_='garage__fullness')
 
@@ -96,6 +122,6 @@ def display_parking_data_from_db():
 
 if __name__ == '__main__':
     scrape_parking_data_and_insert_into_db()
-    display_parking_data_from_db()
+    # display_parking_data_from_db()
 
 
