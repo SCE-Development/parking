@@ -31,6 +31,9 @@ main_logger = logging.getLogger("parking_main")
 verbose_level = int(os.getenv("VERBOSE", "0"))
 logging.getLogger().setLevel(logging.ERROR - (verbose_level * 10))
 
+last_update_timestamp = None
+last_garage_data = None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -67,29 +70,43 @@ def get_time():
 # fastapi endpoints
 @app.get("/parking")
 async def get_garage_data():
+    global last_update_timestamp, last_garage_data
+
     response = http.request("GET", "https://sjsuparkingstatus.sjsu.edu")
     data = response.data.decode("utf-8")
     soup = BeautifulSoup(data, "html.parser")
+
+    timestamp_tag = soup.find('p', class_='timestamp')
+    if not timestamp_tag:
+        logger.warning("Timestamp not found on the page")
+        return None
+
+    current_timestamp = timestamp_tag.text.strip().split("Last updated ")[-1].split(" Refresh")[0]
+
+    if current_timestamp == last_update_timestamp and last_garage_data is not None:
+        logger.info("Timestamp hasn't changed, skipping database update")
+        return last_garage_data
+
     garage_div = soup.find(
         "div", class_="garage"
-    )  # ensures we are only looking in the scope of the garage div
+    )
     garage_names = garage_div.find_all("h2", class_="garage__name")
     garage_fullness = garage_div.find_all("span", class_="garage__fullness")
-    garage_addresses = garage_div.find_all("a")
-    href_links = [link.get("href") for link in garage_addresses]
 
-    garage_data = {}  # Reset garage data for each request
-    for name, fullness, address in zip(garage_names, garage_fullness, href_links):
-        garage_data[name.text.strip().replace(" ", "_")] = [
-            fullness.text.strip(),
-            address,
-        ]
+    garage_data = {}
+    for name, fullness in zip(garage_names, garage_fullness):
+        # Extract percentage number from string like "75% Full"
+        percentage = int(fullness.text.strip().split("%")[0])
+        garage_data[name.text.strip().replace(" ", "_")] = percentage
+
+    # Update the timestamp and last known data
+    last_update_timestamp = current_timestamp
+    last_garage_data = garage_data
 
     timestamp = get_time()
     for garage in GARAGE_NAMES:
-        sqlhelper.insert_garage_data(None, garage, garage_data[garage][0], timestamp)
-        sqlhelper.delete_garage_data(None, garage)
-        logger.info(f"Inserted data for {garage} at {timestamp}")
+        sqlhelper.insert_garage_data(None, garage, f"{garage_data[garage]}% Full", timestamp)
+        logger.info(f"Inserted data for {garage} at {timestamp}, last update timestamp: {last_update_timestamp}")
 
     return garage_data
 
