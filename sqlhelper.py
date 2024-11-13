@@ -1,63 +1,98 @@
-import sqlite3
-from datetime import datetime, timedelta    
+import psycopg2
+from datetime import datetime, timedelta
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import logging
 
-#database setup function
-def maybe_create_table(dbfile: str, garage_names):
-    conn = sqlite3.connect(dbfile)
-    c = conn.cursor()
+logger = logging.getLogger("parking_db")
 
-    for garage_name in garage_names:
-        c.execute(f'''CREATE TABLE IF NOT EXISTS {garage_name} (
-                      id INTEGER PRIMARY KEY,
-                      garage_fullness TEXT,
-                      time TEXT
-                      )''')
-    conn.commit()
-    print("Database setup complete")
-    return conn
 
-#insert data function
+def get_db_connection():
+    return psycopg2.connect(
+        dbname="test_db",
+        user="root",
+        password="root",
+        host="db",  # This is the service name in docker-compose
+        port="5432",
+    )
+
+
 def insert_garage_data(dbfile: str, garage, fullness, timestamp):
-    conn = sqlite3.connect(dbfile)
-    c = conn.cursor()
-    # delete_garage_data()
-    print(f"{garage}")
-    try:
-        query = f"INSERT INTO {garage} (garage_fullness, time) VALUES (?, ?)"
-        c.execute(query, [fullness, timestamp])
-        conn.commit()
-    except Exception as e:
-        print(e)
-        return False
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-    conn.commit()
-    print(f"Data inserted into {garage} at {timestamp}")
-    c.execute(f"SELECT * FROM {garage}")
-    print(c.fetchall())
+    try:
+        query = """
+            INSERT INTO parking_data (garage_name, garage_fullness, timestamp) 
+            VALUES (%s, %s, %s)
+        """
+        cur.execute(query, (garage, fullness, timestamp))
+        conn.commit()
+        logger.info(f"Data inserted into {garage} at {timestamp}")
+
+        # Verify the insertion
+        cur.execute(
+            """
+            SELECT * FROM parking_data 
+            WHERE garage_name = %s 
+            ORDER BY timestamp DESC 
+            LIMIT 1
+        """,
+            (garage,),
+        )
+        logger.debug(f"Inserted data: {cur.fetchone()}")
+
+    except Exception as e:
+        logger.error(f"Error inserting data: {e}")
+        return False
+    finally:
+        cur.close()
+        conn.close()
+
 
 def get_garage_data(dbfile: str, garage, time=None):
-    conn = sqlite3.connect(dbfile)
-    c = conn.cursor()
-    try:
-        query = f"SELECT * FROM {garage}"
-        c.execute(query)
-        return c.fetchall()
-    except Exception as e:
-        print(e)
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-#delete data after two weeks
+    try:
+        if time:
+            query = """
+                SELECT * FROM parking_data 
+                WHERE garage_name = %s AND timestamp >= %s
+                ORDER BY timestamp DESC
+            """
+            cur.execute(query, (garage, time))
+        else:
+            query = """
+                SELECT * FROM parking_data 
+                WHERE garage_name = %s 
+                ORDER BY timestamp DESC
+            """
+            cur.execute(query, (garage,))
+
+        return cur.fetchall()
+    except Exception as e:
+        logger.error(f"Error fetching data: {e}")
+        return []
+    finally:
+        cur.close()
+        conn.close()
+
+
 def delete_garage_data(dbfile: str, garage):
-    conn = sqlite3.connect(dbfile)
-    c = conn.cursor()
-    time_threshold = (datetime.now() - timedelta(weeks=2)).strftime('%Y-%m-%d %H:%M:%S')
-    print("TIME:",time_threshold)
+    conn = get_db_connection()
+    cur = conn.cursor()
+
     try:
-        query = f"DELETE FROM {garage} WHERE time < ?"
-        c.execute(query, (time_threshold,))
+        time_threshold = datetime.now() - timedelta(weeks=2)
+        query = """
+            DELETE FROM parking_data 
+            WHERE garage_name = %s AND timestamp < %s
+        """
+        cur.execute(query, (garage, time_threshold))
         conn.commit()
-        print("Old data deleted")
+        logger.info(f"Old data deleted for {garage}")
     except Exception as e:
-        print(e)
-
-
-
+        logger.error(f"Error deleting data: {e}")
+    finally:
+        cur.close()
+        conn.close()
