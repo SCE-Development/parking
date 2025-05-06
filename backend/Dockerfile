@@ -1,45 +1,26 @@
-# Build stage
-FROM python:3.11-slim as builder
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
 
-# Set working directory
-WORKDIR /app
+# Set the working directory in the container
+WORKDIR /
 
-# Install build dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc python3-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first to leverage Docker cache
+# Copy the dependencies file to the working directory
 COPY requirements.txt .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
 
-# Final stage
-FROM python:3.11-slim
+# Install any needed dependencies specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Create non-root user for security
-RUN useradd -m -r appuser
-
-# Set working directory
-WORKDIR /app
-
-# Copy only necessary files from builder
-COPY --from=builder /app/wheels /wheels
-COPY --from=builder /app/requirements.txt .
-
-# Install dependencies
-RUN pip install --no-cache /wheels/*
-
-# Copy application code
+# Copy the content of the local src directory to the working directory
 COPY . .
 
-# Set ownership to non-root user
-RUN chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
-
-# Expose port (adjust if your server uses a different port)
+# Make port 8000 available to the world outside this container
 EXPOSE 8000
 
-# Command to run the server
-CMD ["python", "server.py"]
+# Define environment variable
+ENV HOST=0.0.0.0
+ENV PORT=8000
+ENV PYTHONUNBUFFERED=1
+
+# Run the command to start uvicorn
+# Assuming your FastAPI app instance is named 'app' in 'main.py'
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
