@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS parking_data (
     timestamp TIMESTAMP NOT NULL
 );
 
+-- Load data from the mounted file
+COPY parking_data (garage_name, garage_fullness, timestamp) FROM '/tmp/initial-data.txt' WITH (FORMAT CSV);
+
 ---- Insert sample data
 --INSERT INTO parking_data (garage_name, garage_fullness, timestamp) VALUES
 --('North_Garage', '75% Full', '2023-05-01 08:00:00'),

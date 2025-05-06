@@ -23,4 +23,4 @@ ENV PYTHONUNBUFFERED=1
 
 # Run the command to start uvicorn
 # Assuming your FastAPI app instance is named 'app' in 'main.py'
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "server.py"]

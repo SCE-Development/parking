@@ -16,8 +16,7 @@ export default defineConfig({
       usePolling: true
     },
     proxy: {
-      '/parking': 'http://localhost:8000',
-      '/parking-history': 'http://localhost:8000'
+      '/api': 'http://server:8000',
     }
   }
 })

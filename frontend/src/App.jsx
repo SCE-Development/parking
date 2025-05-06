@@ -56,7 +56,7 @@ const App = () => {
   */
   useEffect(() => {
     const getData = async () => {
-      const response = await fetch(`http://localhost:8000/parking-history?garage_name=${garage}`)
+      const response = await fetch(`/api/parking-history?garage_name=${garage}`)
       const data = await response.json()
 
       if(data[0] !== undefined) {
