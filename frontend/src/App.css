@@ -35,7 +35,7 @@
 .main-div {
   background-color: rgb(243, 243, 243);
   width: 99vw;
-  min-height: 90vh;
+  min-height: 80vh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -56,7 +56,7 @@
   /* flex-direction: column; */
   justify-content: space-between;
   width: 82vw;
-  min-height: 90vh;
+  min-height: 80vh;
   gap: 2vw;
   align-items: center;
   flex-wrap: wrap;

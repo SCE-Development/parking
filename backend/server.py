@@ -109,8 +109,14 @@ async def insert_garage_data():
     garage_data = {}
     for name, fullness in zip(garage_names, garage_fullness):
         # Extract percentage number from string like "75% Full"
-        percentage = int(fullness.text.strip().split("%")[0])
+        # logger.info(fullness.text.strip())
+        # logger.info(fullness.text.strip() == "Full")
+        if fullness.text.strip() == "Full":
+            percentage = 100
+        else:
+            percentage = int(fullness.text.strip().split("%")[0])
         garage_data[name.text.strip().replace(" ", "_")] = percentage
+        # logger.info("Fullness: " + fullness.text)
 
     # Update the timestamp and last known data
     last_update_timestamp = current_timestamp
@@ -126,7 +132,7 @@ async def insert_garage_data():
 
 @app.get("/parking-history")
 async def get_garage_history(garage_name):
-    print(f"endpoint hit garage_name: {garage_name}")
+    # print(f"endpoint hit garage_name: {garage_name}")
     # todo: input validation: garage_name should be a string, and has to be one of the 4 garage names
     data = sqlhelper.get_garage_data(None, garage_name)
     # print(f"data: {data}")

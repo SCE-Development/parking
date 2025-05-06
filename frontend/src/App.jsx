@@ -76,7 +76,9 @@ const App = () => {
         if(data[0] !== undefined) {
 
           let d = new Date()
-          const dateToday = [d.getFullYear(), d.getMonth() + 1, d.getDate()]
+          const dateToday = [d.getFullYear(), (d.getMonth() + 1).toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false }),
+            d.getDate().toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false })
+          ]
           // month ranges from 0-11
           // const dateToday = data[0][3].split("T")[0].split("-")
           // console.log(dateToday)
@@ -103,7 +105,7 @@ const App = () => {
             const fullness = entry[2].split(" ")[0].split("%")[0]
 
             if(timeRange === "Day") {
-              console.log(day + ", " + dateToday)
+              console.log("checking: " + date + ", date today: " + dateToday)
               if(day === dateToday[2] && year == dateToday[0] && month == dateToday[1]) {
                 newGarageData.unshift({time: time, fullness: fullness})
               }
@@ -120,7 +122,7 @@ const App = () => {
                 const lastDayOfWeek = new Date(today.setDate(today.getDate() + 6));
                 lastDayOfWeek.setHours(23, 59, 59)
 
-                console.log(date + ", " + firstDayOfWeek + ", " + lastDayOfWeek)
+                console.log("date today: " + date + ", first day of week: " + firstDayOfWeek + ", last day of week: " + lastDayOfWeek)
                 return date >= firstDayOfWeek && date <= lastDayOfWeek;
               }
               
@@ -134,21 +136,20 @@ const App = () => {
             }
 
             else if(timeRange === "Month"){
-              console.log(month + ", " + dateToday)
+              console.log("checking: " + date + ", date today: " + dateToday)
               if(month === dateToday[1] && year == dateToday[0]) {
                 newGarageData.unshift({time: `${month}-${day}`, fullness: fullness})
               }
             }
 
             else if(timeRange === "Year"){
-              // console.log(year + ", " + dateToday)
-              if(year === dateToday[0]) {
+              if(year == dateToday[0]) {
                 newGarageData.unshift({time: numToMonth[month], fullness: fullness})
               }
             }
 
             else if(timeRange === "5Year"){
-              // console.log(year + ", " + dateToday)
+              console.log("checking: " + year + ", date today: " + dateToday)
               if(year > dateToday[0] - 5) {
                 newGarageData.unshift({time: numToMonth[month], fullness: fullness})
               }
