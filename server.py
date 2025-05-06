@@ -10,18 +10,20 @@ logging.basicConfig(
 )
 
 # Rest of the imports
-import asyncio
-import urllib3
-from bs4 import BeautifulSoup
+import asyncio #used for async await 
+import urllib3 #more advanced HTTP request handling (GET, POST, ...)
+from bs4 import BeautifulSoup #parsing HTML/web scraping
 from datetime import datetime
-import uvicorn
-from fastapi import FastAPI
+import uvicorn #server that works with FastAPI and is useful for running python backend
+from fastapi import FastAPI #quickly set up python backend
 import sqlhelper
 import time
 import pytz
-import threading
+import threading #used to run something periodically?
 from typing import Optional
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager #used with threading
+
+from fastapi.middleware.cors import CORSMiddleware #handling CORS
 
 # Create loggers
 logger = logging.getLogger("parking_helper")
@@ -54,6 +56,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+origins = [
+    "http://localhost:5173"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager(cert_reqs="CERT_NONE", assert_hostname=False)
 
@@ -68,8 +81,9 @@ def get_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # fastapi endpoints
+#yuwen: main scraping function using BeautifulSoup4
 @app.get("/parking")
-async def get_garage_data():
+async def insert_garage_data():
     global last_update_timestamp, last_garage_data
 
     response = http.request("GET", "https://sjsuparkingstatus.sjsu.edu")
@@ -108,7 +122,17 @@ async def get_garage_data():
         sqlhelper.insert_garage_data(None, garage, f"{garage_data[garage]}% Full", timestamp)
         logger.info(f"Inserted data for {garage} at {timestamp}, last update timestamp: {last_update_timestamp}")
 
+    # return {"test": "hi"}
     return garage_data
+
+@app.get("/parking-history")
+async def get_garage_history(garage_name):
+    # todo: input validation: garage_name should be a string, and has to be one of the 4 garage names
+    return sqlhelper.get_garage_data(None, garage_name)
+
+# @app.get("/test")
+# async def test():
+#     return {"hi changed": "bye"}
 
 @app.get("/")
 async def root():
@@ -122,7 +146,7 @@ def helper_thread_func():
         if current_time.hour >= 7 and current_time.hour < 21:
             try:
                 # Between 7am-9pm, call endpoint
-                asyncio.run(get_garage_data())
+                asyncio.run(insert_garage_data())
             except Exception as e:
                 logger.error(
                     f"An error occurred: {e}", exc_info=True

@@ -1,7 +1,7 @@
-import psycopg2
-from datetime import datetime, timedelta
+import psycopg2 #postgreSQL
+from datetime import datetime, timedelta #used for deleting data
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import logging
+import logging #debugging messages
 
 logger = logging.getLogger("parking_db")
 
@@ -14,7 +14,6 @@ def get_db_connection():
         host="db",  # This is the service name in docker-compose
         port="5432",
     )
-
 
 def insert_garage_data(dbfile: str, garage, fullness, timestamp):
     conn = get_db_connection()
