@@ -16,7 +16,11 @@ export default defineConfig({
       usePolling: true
     },
     proxy: {
-      '/api': 'http://server:8000',
-    }
+      '/api': {
+        target: 'http://server:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''), // Remove /api prefix
+      },
+    },
   }
 })

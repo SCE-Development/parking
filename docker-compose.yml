@@ -10,8 +10,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./backend/initial-data.txt:/tmp/initial-data.txt
+      - ./backend/initial-data.txt:/docker-entrypoint-initdb.d/initial-data.txt
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
       - sce_parking_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U root -d test_db"]

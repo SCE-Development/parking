@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 origins = [
-    "http://localhost:5173"
+    "http://frontend:5173"
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -127,6 +127,7 @@ async def insert_garage_data():
 
 @app.get("/parking-history")
 async def get_garage_history(garage_name):
+    print(f"endpoint hit garage_name: {garage_name}")
     # todo: input validation: garage_name should be a string, and has to be one of the 4 garage names
     return sqlhelper.get_garage_data(None, garage_name)
 
