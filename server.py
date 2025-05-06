@@ -109,8 +109,13 @@ async def insert_garage_data():
 
     garage_data = {}
     for name, fullness in zip(garage_names, garage_fullness):
-        # Extract percentage number from string like "75% Full"
-        percentage = int(fullness.text.strip().split("%")[0])
+        # Extract percentage from fullness text
+        fullness_text = fullness.text.strip()
+        if fullness_text == "Full":
+            percentage = 100
+        else:
+            # Extract percentage number from string like "75% Full"
+            percentage = int(fullness_text.split("%")[0])
         garage_data[name.text.strip().replace(" ", "_")] = percentage
 
     # Update the timestamp and last known data
