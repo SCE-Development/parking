@@ -4,7 +4,6 @@
 /* @custom-variant dark (&:is(.dark *)); */
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -68,9 +67,26 @@ body {
   min-height: 100vh;
 }
 
+#logo {
+  font-weight: bold;
+}
+
+#logo-text {
+  color: white;
+}
+
 h1 {
-  font-size: 3.2em;
+  font-size: 2em;
+  font-weight: bold;
   line-height: 1.1;
+  font-family: "Poppins", sans-serif;
+}
+
+h2 {
+  font-size: 1.2em;
+  font-weight: 500;
+  /* font-family: "Inter", sans-serif; */
+  font-family: "Poppins", sans-serif;
 }
 
 button {

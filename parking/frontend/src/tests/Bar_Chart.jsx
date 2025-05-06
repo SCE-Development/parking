@@ -1,6 +1,6 @@
 // import { Button } from '@/components/ui/button'
 import React, { useState } from 'react'
-import Color_Test from "./Color_test.jsx"
+import Color_Test from "../Color_test.jsx"
 
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"

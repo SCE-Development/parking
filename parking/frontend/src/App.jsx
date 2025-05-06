@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import Color_Test from "./Color_test.jsx"
+import "./App.css"
 
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"
 import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { ChartLegend, ChartLegendContent } from "@/components/ui/chart"
@@ -18,146 +18,220 @@ import {
 const chartConfig = {
   fullness: {
     label: "Fullness (%)",
-    color: "#60a5fa",
+    color: "#FF1E57",
   },
 }
 
 const App = () => {
-  const [garage, setGarage] = useState("")
   const [timeRange, setTimeRange] = useState("Day")
   const [chartData, setChartData] = useState([])
 
   const numToMonth = {
-    "01": "January",
-    "02": "February",
-    "03": "March",
-    "04": "April",
+    "01": "Jan",
+    "02": "Feb",
+    "03": "Mar",
+    "04": "Apr",
     "05": "May",
     "06": "June",
     "07": "July",
-    "08": "August",
-    "09": "September",
-    "10": "October",
-    "11": "November",
-    "12": "December"
+    "08": "Aug",
+    "09": "Sept",
+    "10": "Oct",
+    "11": "Nov",
+    "12": "Dec"
   }
 
-  const handleGarageChange = (e) => {
-    setGarage(e)
+  const numToDayOfWeek = {
+    "0": "Sun",
+    "1": "Mon",
+    "2": "Tues",
+    "3": "Wed",
+    "4": "Thurs",
+    "5": "Fri",
+    "6": "Sat"
   }
   
   const handleTimeRangeChange = (e) => {
     setTimeRange(e)
   }
   
+  const GARAGE_NAMES = ["North_Garage", "South_Garage", "West_Garage", "South_Campus_Garage"]
+
   /*
     get data for selected garage, get current date,
     only add entries that are in current day, week, or month
   */
   useEffect(() => {
     const getData = async () => {
-      const response = await fetch(`http://localhost:8000/parking-history?garage_name=${garage}`)
-      const data = await response.json()
 
-      if(data[0] !== undefined) {
-        const dateToday = data[0][3].split("T")[0].split("-")
-        // dateToday holds date in format: [year, month, date]
+      const updatedChartData = [] //holds new data for all four garage graphs
 
-        var newChartData = []
-        for(let index in data) {
-          const entry = data[index] 
-          const datetime = entry[3].split("T")
-          console.log(datetime[0])
-          const date = datetime[0].split("-")
+      for(const index in GARAGE_NAMES) {
+        const response = await fetch(`http://localhost:8000/parking-history?garage_name=${GARAGE_NAMES[index]}`)
+        const data = await response.json()
 
-          const time = datetime[1]
-          
-          const year = date[0]
-          const month = date[1]
-          const day = date[2]
+        // console.log(data)
 
-          const fullness = entry[2].split(" ")[0].split("%")[0]
-          if(timeRange === "Day") {
-            if(day === dateToday[2]) {
-              newChartData.unshift({time: time, fullness: fullness})
+        if(data[0] !== undefined) {
+
+
+          const dateToday = data[0][3].split("T")[0].split("-")
+          // dateToday holds date in format: [year, month, date]
+
+          var newGarageData = []
+          for(let index in data) {
+            const entry = data[index] 
+            const datetime = entry[3].split("T")
+
+            const date = datetime[0].split("-")
+
+            const gmtDate = new Date(data[index][3] + "Z")
+            const pacificTime = gmtDate.toLocaleString("en-US", {
+              timeZone: "America/Los_Angeles",
+            });
+
+            const time = pacificTime.split(" ")[1].substring(0, 4)// + pacificTime.split(" ")[2]
+            
+            const year = date[0]
+            const month = date[1]
+            const day = date[2]
+
+            const fullness = entry[2].split(" ")[0].split("%")[0]
+
+            if(timeRange === "Day") {
+              if(day === dateToday[2]) {
+                newGarageData.unshift({time: time, fullness: fullness})
+              }
             }
-          }
-          else if(timeRange === "Month"){
-            if(month === dateToday[1]) {
-              newChartData.unshift({time: `${month}-${day}`, fullness: fullness})
+
+            else if (timeRange == "Week") {
+
+              function isDateInThisWeek(date) {
+                // issue: should compare only day, month, and year -> don't compare time
+                const today = new Date();
+
+                const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+                firstDayOfWeek.setHours(0, 0, 0)
+                const lastDayOfWeek = new Date(today.setDate(today.getDate() + 6));
+                lastDayOfWeek.setHours(23, 59, 59)
+
+                return date >= firstDayOfWeek && date <= lastDayOfWeek;
+              }
+              
+              const pacificDate = new Date(pacificTime)
+              const isInWeek = isDateInThisWeek(pacificDate);
+              
+              // console.log(dateToCheck + ", " + isInWeek);
+
+              if (isInWeek) {
+                newGarageData.unshift({time: `${numToDayOfWeek[pacificDate.getDay()]}`, fullness: fullness})
+                // Sunday - Saturday : 0 - 6
+              }
             }
-          }
-          else if(timeRange === "Year"){
-            if(year === dateToday[0]) {
-              newChartData.unshift({time: numToMonth[month], fullness: fullness})
+
+            else if(timeRange === "Month"){
+              if(month === dateToday[1]) {
+                newGarageData.unshift({time: `${month}-${day}`, fullness: fullness})
+              }
             }
+
+            else if(timeRange === "Year"){
+              if(year === dateToday[0]) {
+                newGarageData.unshift({time: numToMonth[month], fullness: fullness})
+              }
+            }
+
           }
         }
+        updatedChartData.push(newGarageData)
       }
-      setChartData(newChartData)
+      setChartData(updatedChartData)
     }
     getData()
-  }, [garage, timeRange])
-  // make garage and time dependencies
+  }, [timeRange])
+  // make time a dependency
+
+  console.log(chartData)
 
   return (
     <>
-      <h1>Garage Fullness</h1>
-      <br></br>
-      <div className="flex flex-row">
-        <Select onValueChange={handleGarageChange}>
-          <SelectTrigger className="w-[230px]">
-            <SelectValue placeholder="Select Garage" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="South_Garage">South Garage</SelectItem>
-            <SelectItem value="North_Garage">North Garage</SelectItem>
-            <SelectItem value="West_Garage">West Garage</SelectItem>
-            <SelectItem value="South_Campus_Garage">South Campus Garage</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select onValueChange={handleTimeRangeChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Today" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Day">Today</SelectItem>
-            <SelectItem value="Month">This Month</SelectItem>
-            <SelectItem value="Year">This Year</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="top-nav-div">
+        <div className="logo-div">
+          <h2 id="logo-text">P</h2>
+        </div>
+        <h2 id="logo">SCE Parking</h2>
       </div>
-      <br></br>
-      <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-        <AreaChart
-          accessibilityLayer
-          data={chartData}
-          margin={{
-            left: 12,
-            right: 12,
-          }}
-        >
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="time"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-            tickFormatter={(value) => value.slice(0, 5)}
-          />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <ChartLegend content={<ChartLegendContent />} />
+      <div className="main-div">
+        <div className="options-div">
+          <h1>Garage Fullness</h1>
+          <br></br>
+          <div className="flex flex-row">
+            <Select onValueChange={handleTimeRangeChange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Today" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Day">Today</SelectItem>
+                <SelectItem value="Week">This Week</SelectItem>
+                <SelectItem value="Month">This Month</SelectItem>
+                <SelectItem value="Year">This Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <br></br>
+        </div>
 
-          <Area
-              dataKey="fullness"
-              type="natural"
-              fill={chartConfig.fullness.color}
-              fillOpacity={0.4}
-              stroke={chartConfig.fullness.color}
-              stackId="a"
-          />
-        </AreaChart>  
-      </ChartContainer>
+        <div className="garage-charts-div">
+          {chartData.map((garageData, index) => (
+            <div className="garage-chart" key={index}>
+              <div className="garage-name-div">
+                <h2>{GARAGE_NAMES[index].replaceAll("_", " ")}</h2>
+              </div>
+              <div className="chart-div">
+              <br></br>
+                <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                  <AreaChart
+                    accessibilityLayer
+                    data={garageData}
+                    margin={{
+                      left: 12,
+                      right: 12,
+                    }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="time"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      tickFormatter={(value) => value.slice(0, 5)}
+                    />
+                    <YAxis
+                      dataKey="fullness"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      domain={[0, 100]}
+                      // tickFormatter={(value) => value.slice(0, 5)}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+
+                    <Area
+                        dataKey="fullness"
+                        type="natural"
+                        fill={chartConfig.fullness.color}
+                        fillOpacity={0.4}
+                        stroke={chartConfig.fullness.color}
+                        stackId="a"
+                    />
+                  </AreaChart>  
+                </ChartContainer>   
+              </div>
+            </div>  
+          ))}
+        </div>
+      </div>
     </>
   )
 }
