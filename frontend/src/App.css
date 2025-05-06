@@ -1,42 +1,102 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
+/* * {
+  margin: 0;
+  padding: 0;
+} */
+
+
+.top-nav-div {
+  background-color: white;
+  margin: 0;
+  padding: 1rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5vw;
+}
+
+
+.logo-div {
+  background-color: #FF1E57;
+  padding: 1rem;
+  border-radius: 5px;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.logo-div h2 {
+  font-weight: 800;
+}
+
+
+.main-div {
+  background-color: rgb(243, 243, 243);
+  width: 99vw;
+  min-height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
   padding: 2rem;
-  text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+
+.options-div {
+  /* background-color: black; */
+  width: 82vw;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+
+.garage-charts-div {
+  display: flex;
+  /* background-color: black; */
+  /* flex-direction: column; */
+  justify-content: space-between;
+  width: 82vw;
+  min-height: 90vh;
+  gap: 2vw;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+
+.garage-chart {
+  background-color: white;
+  box-shadow: 0px 2px 5px rgb(220, 220, 220);
+  /* padding: 1rem; */
+  border-radius: 10px;
+  width: 40vw;
+  overflow: hidden;
+  /* height: 50vh; */
+  /* transition: transform 2s; */
+  transition: transform 0.5s, box-shadow 0.5s;
 }
 
-.card {
-  padding: 2em;
+
+.garage-chart:hover {
+  transform: translate(0px, 10px);
+  box-shadow: 0px 2px 2px rgb(192, 192, 192);
+  background-color: rgb(251, 251, 251);
 }
 
-.read-the-docs {
-  color: #888;
+
+.garage-name-div {
+  background-color: rgb(246, 215, 215);
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.garage-name-div h2 {
+  color: rgb(81, 81, 81);
+}
+
+
+.chart-div {
+  padding: 1vw;
 }

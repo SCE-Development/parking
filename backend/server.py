@@ -23,7 +23,7 @@ import threading #used to run something periodically?
 from typing import Optional
 from contextlib import asynccontextmanager #used with threading
 
-from fastapi.middleware.cors import CORSMiddleware #handling CORS
+from fastapi.middleware.cors import CORSMiddleware
 
 # Create loggers
 logger = logging.getLogger("parking_helper")
@@ -56,16 +56,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-origins = [
-    "http://frontend:5173"
-]
+# Add CORS middleware IMMEDIATELY after FastAPI instance
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager(cert_reqs="CERT_NONE", assert_hostname=False)
