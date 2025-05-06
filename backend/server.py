@@ -129,7 +129,9 @@ async def insert_garage_data():
 async def get_garage_history(garage_name):
     print(f"endpoint hit garage_name: {garage_name}")
     # todo: input validation: garage_name should be a string, and has to be one of the 4 garage names
-    return sqlhelper.get_garage_data(None, garage_name)
+    data = sqlhelper.get_garage_data(None, garage_name)
+    # print(f"data: {data}")
+    return data
 
 # @app.get("/test")
 # async def test():

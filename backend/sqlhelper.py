@@ -9,7 +9,7 @@ logger = logging.getLogger("parking_db")
 def get_db_connection():
     return psycopg2.connect(
         dbname="test_db",
-        user="root",
+        user="postgres",
         password="root",
         host="db",  # This is the service name in docker-compose
         port="5432",

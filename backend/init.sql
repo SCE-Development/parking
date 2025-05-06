@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS parking_data (
 );
 
 -- Load data from the mounted file
-COPY parking_data (garage_name, garage_fullness, timestamp) FROM '/docker-entrypoint-initdb.d/initial-data.txt' WITH (FORMAT CSV);
+COPY parking_data (id,garage_name, garage_fullness, timestamp) FROM '/docker-entrypoint-initdb.d/initial-data.txt' WITH (FORMAT CSV);
 
 ---- Insert sample data
 --INSERT INTO parking_data (garage_name, garage_fullness, timestamp) VALUES
@@ -21,4 +21,5 @@ COPY parking_data (garage_name, garage_fullness, timestamp) FROM '/docker-entryp
 --('South_Campus_Garage', '40% Full', '2023-05-01 09:00:00');
 
 ---- Verify the data
---SELECT * FROM parking_data;
+-- select first 10 rows
+SELECT * FROM parking_data LIMIT 10;
