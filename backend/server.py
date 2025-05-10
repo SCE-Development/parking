@@ -130,21 +130,14 @@ async def insert_garage_data():
     # return {"test": "hi"}
     return garage_data
 
-@app.get("/parking-history")
-async def get_garage_history(garage_name):
-    # print(f"endpoint hit garage_name: {garage_name}")
-    # todo: input validation: garage_name should be a string, and has to be one of the 4 garage names
-    data = sqlhelper.get_garage_data(None, garage_name)
-    # print(f"data: {data}")
-    return data
-
-# @app.get("/test")
-# async def test():
-#     return {"hi changed": "bye"}
-
 @app.get("/")
 async def root():
     return "Welcome to SJSU Parking!"
+
+@app.get("/parking-history")
+async def get_garage_history(garage_name, time_stamp=None):
+    data = sqlhelper.get_garage_data(None, garage_name, time_stamp)
+    return data
 
 def helper_thread_func():
     logger.info("Helper thread started.")

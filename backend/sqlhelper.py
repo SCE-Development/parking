@@ -54,6 +54,7 @@ def get_garage_data(dbfile: str, garage, time=None):
 
     try:
         if time:
+            # print("queried with timestamp: ")
             query = """
                 SELECT * FROM parking_data 
                 WHERE garage_name = %s AND timestamp >= %s

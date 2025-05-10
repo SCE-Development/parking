@@ -57,104 +57,116 @@ const App = () => {
   
   const GARAGE_NAMES = ["North_Garage", "South_Garage", "West_Garage", "South_Campus_Garage"]
 
-  /*
-    get data for selected garage, get current date,
-    only add entries that are in current day, week, or month
-  */
+  const getEarliestQueryDate = () => {
+    let d = new Date()
+    if(timeRange === "Day") {
+      d.setHours(0, 0, 0)
+    }
+    else if (timeRange == "Week") {
+      d = new Date(d.setDate(d.getDate() - d.getDay()))
+      d.setHours(0, 0, 0)
+    }
+    else if(timeRange === "Month"){
+      d.setDate(1)
+      d.setHours(0, 0, 0)
+    }
+    else if(timeRange === "Year"){
+      d.setMonth(0)
+      d.setDate(1)
+      d.setHours(0, 0, 0)
+    }
+    else if(timeRange === "5Year"){
+      d.setFullYear(d.getFullYear() - 5)
+      d.setMonth(0)
+      d.setDate(1)
+      d.setHours(0, 0, 0)
+    }
+    return d
+  }
+
+  /* updates garage data to display */
   useEffect(() => {
     setChartData([])
+
+    // convert to date/time format accepted by SQL
+    const dateToSQLTimestamp = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // JS months are 0-based
+      const day = String(date.getDate()).padStart(2, '0');
+    
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
     const getData = async () => {
-
       const updatedChartData = [] //holds new data for all four garage graphs
+      /*
+      1. (done) fetch all using Promise.all
+      2. (done) find earliest a timestamp for to include filtering
+        and format date - using ISO
+      3. (done) format returned data to be displayed
+      */
+      // earliest date of data to include in query
+      const d = getEarliestQueryDate()
+      console.log(dateToSQLTimestamp(d))
 
-      for(const index in GARAGE_NAMES) {
-        const response = await fetch(`/api/parking-history?garage_name=${GARAGE_NAMES[index]}`)
-        const data = await response.json()
+      const p1 = fetch(`/api/parking-history?garage_name=${"North_Garage"}&time_stamp=${dateToSQLTimestamp(d)}`)
+      const p2 = fetch(`/api/parking-history?garage_name=${"South_Garage"}&time_stamp=${dateToSQLTimestamp(d)}`)
+      const p3 = fetch(`/api/parking-history?garage_name=${"West_Garage"}&time_stamp=${dateToSQLTimestamp(d)}`)
+      const p4 = fetch(`/api/parking-history?garage_name=${"South_Campus_Garage"}&time_stamp=${dateToSQLTimestamp(d)}`)
 
-        // console.log(data)
+      const rawData = await Promise.all([
+        p1, 
+        p2, 
+        p3, 
+        p4])
 
-        if(data[0] !== undefined) {
+      const garageData = await Promise.all([
+        rawData[0].json(),
+        rawData[1].json(),
+        rawData[2].json(),
+        rawData[3].json()
+      ])
 
-          let d = new Date()
-          const dateToday = [d.getFullYear(), (d.getMonth() + 1).toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false }),
-            d.getDate().toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false })
-          ]
-          // month ranges from 0-11
-          // const dateToday = data[0][3].split("T")[0].split("-")
-          // console.log(dateToday)
-          // dateToday holds date in format: [year, month, date]
-
-          var newGarageData = []
-          for(let index in data) {
-            const entry = data[index] 
-            const datetime = entry[3].split("T")
-
-            const date = datetime[0].split("-")
-
-            const gmtDate = new Date(data[index][3] + "Z")
-            const pacificTime = gmtDate.toLocaleString("en-US", {
+      for(const index1 in garageData) {
+        const newGarageData = []
+        const data = garageData[index1]
+        for(let index2 in data) {
+          const entry = data[index2]
+          const datetime = entry[3].split("T")
+          const fullness = entry[2].split(" ")[0].split("%")[0]
+      
+          const date = datetime[0].split("-")
+      
+          const gmtDate = new Date(data[index2][3] + "Z")
+          const pacificTime = gmtDate.toLocaleString("en-US", {
               timeZone: "America/Los_Angeles",
-            });
+          });
+      
+          const time = pacificTime.split(" ")[1].substring(0, 4)// + pacificTime.split(" ")[2]
+          
+          const year = date[0]
+          const month = date[1]
+          const day = date[2]
 
-            const time = pacificTime.split(" ")[1].substring(0, 4)// + pacificTime.split(" ")[2]
-            
-            const year = date[0]
-            const month = date[1]
-            const day = date[2]
-
-            const fullness = entry[2].split(" ")[0].split("%")[0]
-
-            if(timeRange === "Day") {
-              console.log("checking: " + date + ", date today: " + dateToday)
-              if(day === dateToday[2] && year == dateToday[0] && month == dateToday[1]) {
-                newGarageData.unshift({time: time, fullness: fullness})
-              }
-            }
-
-            else if (timeRange == "Week") {
-
-              function isDateInThisWeek(date) {
-                // issue: should compare only day, month, and year -> don't compare time
-                const today = new Date();
-
-                const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-                firstDayOfWeek.setHours(0, 0, 0)
-                const lastDayOfWeek = new Date(today.setDate(today.getDate() + 6));
-                lastDayOfWeek.setHours(23, 59, 59)
-
-                console.log("date today: " + date + ", first day of week: " + firstDayOfWeek + ", last day of week: " + lastDayOfWeek)
-                return date >= firstDayOfWeek && date <= lastDayOfWeek;
-              }
-              
-              const pacificDate = new Date(pacificTime)
-              const isInWeek = isDateInThisWeek(pacificDate);
-
-              if (isInWeek) {
-                newGarageData.unshift({time: `${numToDayOfWeek[pacificDate.getDay()]}`, fullness: fullness})
-                // Sunday - Saturday : 0 - 6
-              }
-            }
-
-            else if(timeRange === "Month"){
-              console.log("checking: " + date + ", date today: " + dateToday)
-              if(month === dateToday[1] && year == dateToday[0]) {
-                newGarageData.unshift({time: `${month}-${day}`, fullness: fullness})
-              }
-            }
-
-            else if(timeRange === "Year"){
-              if(year == dateToday[0]) {
-                newGarageData.unshift({time: numToMonth[month], fullness: fullness})
-              }
-            }
-
-            else if(timeRange === "5Year"){
-              console.log("checking: " + year + ", date today: " + dateToday)
-              if(year > dateToday[0] - 5) {
-                newGarageData.unshift({time: numToMonth[month], fullness: fullness})
-              }
-            }
-
+          // console.log(GARAGE_NAMES[index] + ", " + garageData[index])
+          if(timeRange === "Day") {
+            newGarageData.unshift({time: time, fullness: fullness})
+          }
+          else if (timeRange == "Week") {          
+            newGarageData.unshift({time: `${numToDayOfWeek[d.getDate()]}`, fullness: fullness})
+          }
+          else if(timeRange === "Month"){
+            newGarageData.unshift({time: `${month}-${day}`, fullness: fullness})
+          }
+          else if(timeRange === "Year"){
+            newGarageData.unshift({time: numToMonth[month], fullness: fullness})
+          }
+          else if(timeRange === "5Year"){
+            newGarageData.unshift({time: year, fullness: fullness})
           }
         }
         updatedChartData.push(newGarageData)
@@ -163,7 +175,6 @@ const App = () => {
     }
     getData()
   }, [timeRange])
-  // make time a dependency
 
   console.log(chartData)
 
