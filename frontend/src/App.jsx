@@ -111,7 +111,7 @@ const App = () => {
       */
       // earliest date of data to include in query
       const d = getEarliestQueryDate()
-      console.log(dateToSQLTimestamp(d))
+      // console.log(dateToSQLTimestamp(d))
 
       const p1 = fetch(`/api/parking-history?garage_name=${"North_Garage"}&time_stamp=${dateToSQLTimestamp(d)}`)
       const p2 = fetch(`/api/parking-history?garage_name=${"South_Garage"}&time_stamp=${dateToSQLTimestamp(d)}`)
@@ -139,8 +139,6 @@ const App = () => {
           const datetime = entry[3].split("T")
           const fullness = entry[2].split(" ")[0].split("%")[0]
       
-          const date = datetime[0].split("-")
-      
           const gmtDate = new Date(data[index2][3] + "Z")
           const pacificTime = gmtDate.toLocaleString("en-US", {
               timeZone: "America/Los_Angeles",
@@ -148,11 +146,12 @@ const App = () => {
       
           const time = pacificTime.split(" ")[1].substring(0, 4)// + pacificTime.split(" ")[2]
           
-          const year = date[0]
-          const month = date[1]
-          const day = date[2]
+          const date = pacificTime.split(",")[0].split("/")
+          
+          const year = date[2]
+          const month = date[0].padStart(2, "0")
+          const day = date[1].padStart(2, "0")
 
-          // console.log(GARAGE_NAMES[index] + ", " + garageData[index])
           if(timeRange === "Day") {
             newGarageData.unshift({time: time, fullness: fullness})
           }
@@ -176,7 +175,7 @@ const App = () => {
     getData()
   }, [timeRange])
 
-  console.log(chartData)
+  // console.log(chartData)
 
   return (
     <>

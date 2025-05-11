@@ -136,7 +136,8 @@ async def root():
 
 @app.get("/parking-history")
 async def get_garage_history(garage_name, time_stamp=None):
-    data = sqlhelper.get_garage_data(None, garage_name, time_stamp)
+    if garage_name in GARAGE_NAMES:
+        data = sqlhelper.get_garage_data(None, garage_name, time_stamp)
     return data
 
 def helper_thread_func():
