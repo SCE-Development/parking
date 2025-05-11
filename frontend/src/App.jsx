@@ -152,11 +152,19 @@ const App = () => {
           const month = date[0].padStart(2, "0")
           const day = date[1].padStart(2, "0")
 
+          const pacificDate = new Date()
+          pacificDate.setFullYear(year)
+          pacificDate.setMonth(month - 1)
+          pacificDate.setDate(day)
+          // const pacificDate = new Date("2022-03-25");
+          console.log(pacificDate)
+          const dayOfWeek = pacificDate.getDay()
+
           if(timeRange === "Day") {
             newGarageData.unshift({time: time, fullness: fullness})
           }
           else if (timeRange == "Week") {          
-            newGarageData.unshift({time: `${numToDayOfWeek[d.getDate()]}`, fullness: fullness})
+            newGarageData.unshift({time: `${numToDayOfWeek[dayOfWeek]}`, fullness: fullness})
           }
           else if(timeRange === "Month"){
             newGarageData.unshift({time: `${month}-${day}`, fullness: fullness})
