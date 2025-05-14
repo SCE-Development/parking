@@ -79,6 +79,13 @@ should_run = threading.Event()
 def get_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+def is_valid_timestamp(ts):
+    try:
+        datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+        return True
+    except ValueError:
+        return False
+    
 # fastapi endpoints
 #yuwen: main scraping function using BeautifulSoup4
 @app.get("/parking")
@@ -124,8 +131,9 @@ async def insert_garage_data():
 
     timestamp = get_time()
     for garage in GARAGE_NAMES:
-        sqlhelper.insert_garage_data(None, garage, f"{garage_data[garage]}% Full", timestamp)
-        logger.info(f"Inserted data for {garage} at {timestamp}, last update timestamp: {last_update_timestamp}")
+        if is_valid_timestamp(timestamp):
+            sqlhelper.insert_garage_data(None, garage, f"{garage_data[garage]}% Full", timestamp)
+            logger.info(f"Inserted data for {garage} at {timestamp}, last update timestamp: {last_update_timestamp}")
 
     # return {"test": "hi"}
     return garage_data
@@ -136,7 +144,7 @@ async def root():
 
 @app.get("/parking-history")
 async def get_garage_history(garage_name, time_stamp=None):
-    if garage_name in GARAGE_NAMES:
+    if garage_name in GARAGE_NAMES and is_valid_timestamp(time_stamp):
         data = sqlhelper.get_garage_data(None, garage_name, time_stamp)
     return data
 
