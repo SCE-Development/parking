@@ -1,26 +1,28 @@
-version: "3.8"
 services:
   db:
     container_name: postgres_container
     image: postgres:13
     restart: always
     environment:
-      POSTGRES_USER: root
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
       POSTGRES_DB: test_db
     ports:
       - "5432:5432"
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/initial-data.txt:/docker-entrypoint-initdb.d/initial-data.txt
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
       - sce_parking_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d test_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d test_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   server:
-    build: .
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: parking_server
     restart: always
     ports:
@@ -38,6 +40,18 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: parking_frontend
+    ports:
+      - "5173:5173"
+    restart: always
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   sce_parking_data:

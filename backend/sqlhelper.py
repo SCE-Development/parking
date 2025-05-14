@@ -9,7 +9,7 @@ logger = logging.getLogger("parking_db")
 def get_db_connection():
     return psycopg2.connect(
         dbname="test_db",
-        user="root",
+        user="postgres",
         password="root",
         host="db",  # This is the service name in docker-compose
         port="5432",
@@ -20,6 +20,15 @@ def insert_garage_data(dbfile: str, garage, fullness, timestamp):
     cur = conn.cursor()
 
     try:
+        # fixing id out of order
+        # cur.execute("SELECT pg_get_serial_sequence('parking_data', 'id');")
+        # sequence_name = cur.fetchone()[0]
+
+        # cur.execute(f"SELECT setval(%s, (SELECT MAX(id) FROM parking_data));", (sequence_name,))
+
+        # logger.debug(f"Inserted data: {cur.fetchone()}")
+        # conn.commit()
+
         query = """
             INSERT INTO parking_data (garage_name, garage_fullness, timestamp) 
             VALUES (%s, %s, %s)
@@ -38,7 +47,6 @@ def insert_garage_data(dbfile: str, garage, fullness, timestamp):
         """,
             (garage,),
         )
-        logger.debug(f"Inserted data: {cur.fetchone()}")
 
     except Exception as e:
         logger.error(f"Error inserting data: {e}")
@@ -54,6 +62,7 @@ def get_garage_data(dbfile: str, garage, time=None):
 
     try:
         if time:
+            # print("queried with timestamp: ")
             query = """
                 SELECT * FROM parking_data 
                 WHERE garage_name = %s AND timestamp >= %s

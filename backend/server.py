@@ -23,7 +23,7 @@ import threading #used to run something periodically?
 from typing import Optional
 from contextlib import asynccontextmanager #used with threading
 
-from fastapi.middleware.cors import CORSMiddleware #handling CORS
+from fastapi.middleware.cors import CORSMiddleware
 
 # Create loggers
 logger = logging.getLogger("parking_helper")
@@ -56,16 +56,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-origins = [
-    "http://localhost:5173"
-]
+# Add CORS middleware IMMEDIATELY after FastAPI instance
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager(cert_reqs="CERT_NONE", assert_hostname=False)
@@ -80,6 +79,13 @@ should_run = threading.Event()
 def get_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+def is_valid_timestamp(ts):
+    try:
+        datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+        return True
+    except ValueError:
+        return False
+    
 # fastapi endpoints
 #yuwen: main scraping function using BeautifulSoup4
 @app.get("/parking")
@@ -110,8 +116,14 @@ async def insert_garage_data():
     garage_data = {}
     for name, fullness in zip(garage_names, garage_fullness):
         # Extract percentage number from string like "75% Full"
-        percentage = int(fullness.text.strip().split("%")[0])
+        # logger.info(fullness.text.strip())
+        # logger.info(fullness.text.strip() == "Full")
+        if fullness.text.strip() == "Full":
+            percentage = 100
+        else:
+            percentage = int(fullness.text.strip().split("%")[0])
         garage_data[name.text.strip().replace(" ", "_")] = percentage
+        # logger.info("Fullness: " + fullness.text)
 
     # Update the timestamp and last known data
     last_update_timestamp = current_timestamp
@@ -119,24 +131,22 @@ async def insert_garage_data():
 
     timestamp = get_time()
     for garage in GARAGE_NAMES:
-        sqlhelper.insert_garage_data(None, garage, f"{garage_data[garage]}% Full", timestamp)
-        logger.info(f"Inserted data for {garage} at {timestamp}, last update timestamp: {last_update_timestamp}")
+        if is_valid_timestamp(timestamp):
+            sqlhelper.insert_garage_data(None, garage, f"{garage_data[garage]}% Full", timestamp)
+            logger.info(f"Inserted data for {garage} at {timestamp}, last update timestamp: {last_update_timestamp}")
 
     # return {"test": "hi"}
     return garage_data
 
-@app.get("/parking-history")
-async def get_garage_history(garage_name):
-    # todo: input validation: garage_name should be a string, and has to be one of the 4 garage names
-    return sqlhelper.get_garage_data(None, garage_name)
-
-# @app.get("/test")
-# async def test():
-#     return {"hi changed": "bye"}
-
 @app.get("/")
 async def root():
     return "Welcome to SJSU Parking!"
+
+@app.get("/parking-history")
+async def get_garage_history(garage_name, time_stamp=None):
+    if garage_name in GARAGE_NAMES and is_valid_timestamp(time_stamp):
+        data = sqlhelper.get_garage_data(None, garage_name, time_stamp)
+    return data
 
 def helper_thread_func():
     logger.info("Helper thread started.")
